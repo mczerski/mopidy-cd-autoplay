@@ -14,7 +14,7 @@ def get_version(filename):
 setup(
     name='Mopidy-Cd-Autoplay',
     version=get_version('mopidy_cd_autoplay/__init__.py'),
-    url='TODO: https://github.com/forscher21/mopidy-cd',
+    url='https://github.com/mczerski/mopidy-cd-autoplay',
     license='Apache License, Version 2.0',
     author='Marek Czerski',
     author_email='ma.czerski@gmail.com',
@@ -25,6 +25,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'setuptools',
+        'pyudev >= 0.21.0',
         'Mopidy >= 2.0',
         'Pykka >= 1.1',
     ],
