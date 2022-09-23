@@ -44,7 +44,7 @@ class CdFrontend(pykka.ThreadingActor, core.CoreListener):
     def _get_cd_available(self):
         for device in self._context.list_devices(subsystem='block', DEVTYPE='disk'):
             try:
-                if device['ID_CDROM_MEDIA_CD'] == '1':
+                if device['ID_CDROM_MEDIA_CD'] == '1' or device['ID_CDROM_MEDIA_CD_R'] == '1':
                     return True
             except KeyError:
                 pass
