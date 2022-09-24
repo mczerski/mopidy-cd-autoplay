@@ -18,14 +18,15 @@ class CdFrontend(pykka.ThreadingActor, core.CoreListener):
         self._monitor = pyudev.Monitor.from_netlink(self._context)
         self._monitor.filter_by('block')
         self._observer = pyudev.MonitorObserver(self._monitor, self._callback_function)
-        self._cd_drive_path = self._get_cd_drive_path()
+        self._cd_drive_path = None
+        self._available = False
+        self._init_cd_drive()
 
         if self._cd_drive_path is None:
             logger.error('CD Rom drive not fount. CD Frontend will not work')
             return
         else:
             logger.info('CD Rom found [%s]', self._cd_drive_path)
-            self._available = self._get_cd_available()
             if self._available:
                 logger.info('Disk present in CD Rom')
             else:
@@ -33,22 +34,16 @@ class CdFrontend(pykka.ThreadingActor, core.CoreListener):
 
         self._observer.start()
 
-    def _get_cd_drive_path(self):
+    def _init_cd_drive(self):
         for device in self._context.list_devices(subsystem='block', DEVTYPE='disk'):
-            try:
-                if device['ID_CDROM_CD'] == '1':
-                    return device['DEVNAME']
-            except KeyError:
-                pass
+            if device.get('ID_CDROM_CD') == '1':
+                self._cd_drive_path = device['DEVNAME']
+                self._available = self._is_cd_available(device)
+                return
 
-    def _get_cd_available(self):
-        for device in self._context.list_devices(subsystem='block', DEVTYPE='disk'):
-            try:
-                if device['ID_CDROM_MEDIA_CD'] == '1' or device['ID_CDROM_MEDIA_CD_R'] == '1':
-                    return True
-            except KeyError:
-                pass
-        return False
+    @staticmethod
+    def _is_cd_available(device):
+        return device.properties.get('ID_CDROM_MEDIA_CD') == '1' or device.properties.get('ID_CDROM_MEDIA_CD_R')== '1'
 
     def _callback_function(self, action, device):
         if action != 'change':
@@ -59,12 +54,7 @@ class CdFrontend(pykka.ThreadingActor, core.CoreListener):
         except KeyError:
             return
 
-        available = False
-        try:
-            if device['ID_CDROM_MEDIA_CD'] == '1':
-                available = True
-        except KeyError:
-            pass
+        available = self._is_cd_available(device)
 
         if available == self._available:
             return
